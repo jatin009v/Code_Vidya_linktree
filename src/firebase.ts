@@ -294,7 +294,7 @@ export function subscribePresence(callback: Listener<Visitor[]>, onError?: Error
   return onSnapshot(
     collection(db, "presence"),
     (snapshot) => {
-      const cutoff = Date.now() - 45000;
+      const cutoff = Date.now() - 120000;
       const visitors = snapshot.docs
         .map((entry) => ({ id: entry.id, ...entry.data() }) as Visitor)
         .filter((visitor) => visitor.lastSeen > cutoff)

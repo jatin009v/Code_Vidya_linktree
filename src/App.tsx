@@ -159,7 +159,6 @@ function App() {
     const leave = () => {
       if (current) {
         removePresence(current.id).catch(() => {});
-        deleteUserMessages(current.id).catch(() => {});
       }
     };
     window.addEventListener("beforeunload", leave);
@@ -171,27 +170,6 @@ function App() {
       leave();
     };
   }, []);
-
-  useEffect(() => {
-    if (!visitor || visitors.length === 0) return;
-    const isPresenceLoaded = visitors.some((v) => v.id === visitor.id);
-    if (!isPresenceLoaded) return;
-
-    const onlineIds = new Set(visitors.map((v) => v.id));
-    const offlineUserIdsToDelete = new Set<string>();
-
-    messages.forEach((msg) => {
-      if (msg.userId !== "system" && !onlineIds.has(msg.userId)) {
-        offlineUserIdsToDelete.add(msg.userId);
-      }
-    });
-
-    offlineUserIdsToDelete.forEach((offlineUserId) => {
-      deleteUserMessages(offlineUserId).catch((err) => {
-        console.error("Cleanup error for offline user:", offlineUserId, err);
-      });
-    });
-  }, [messages, visitors, visitor]);
 
   useEffect(() => {
     if (toast) {
@@ -348,10 +326,7 @@ function App() {
     }
   };
 
-  const onlineMessages = useMemo(() => {
-    const onlineIds = new Set(visitors.map((v) => v.id));
-    return messages.filter((msg) => msg.userId === "system" || onlineIds.has(msg.userId));
-  }, [messages, visitors]);
+
 
   const typingVisitors = visitors.filter((entry) => entry.isTyping && entry.id !== visitor?.id);
 
@@ -549,7 +524,7 @@ function App() {
       <Chat
         open={chatOpen}
         setOpen={setChatOpen}
-        messages={onlineMessages}
+        messages={messages}
         visitor={visitor}
         realtimeError={realtimeError}
         text={chatText}
