@@ -159,6 +159,7 @@ function App() {
     const leave = () => {
       if (current) {
         removePresence(current.id).catch(() => {});
+        deleteUserMessages(current.id).catch(() => {});
       }
     };
     window.addEventListener("beforeunload", leave);
@@ -284,9 +285,39 @@ function App() {
     );
   }, [theme]);
 
+  const visibleMessages = useMemo(() => {
+    const activeUserIds = new Set(visitors.map((v) => v.id));
+    if (visitor) {
+      activeUserIds.add(visitor.id);
+    }
+    return messages.filter((msg) => msg.userId === "system" || activeUserIds.has(msg.userId));
+  }, [messages, visitors, visitor]);
+
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, chatOpen]);
+  }, [visibleMessages, chatOpen]);
+
+  useEffect(() => {
+    const activeUserIds = new Set(visitors.map((v) => v.id));
+    if (visitor) {
+      activeUserIds.add(visitor.id);
+    }
+
+    const staleUserIds = new Set<string>();
+    messages.forEach((msg) => {
+      if (msg.userId !== "system" && !activeUserIds.has(msg.userId)) {
+        staleUserIds.add(msg.userId);
+      }
+    });
+
+    if (staleUserIds.size > 0) {
+      staleUserIds.forEach((userId) => {
+        deleteUserMessages(userId).catch((err) => {
+          console.error(`Failed to delete messages for stale user ${userId}:`, err);
+        });
+      });
+    }
+  }, [messages, visitors, visitor]);
 
   const filtered = useMemo(() => {
     return resources.filter((resource) => {
@@ -524,7 +555,7 @@ function App() {
       <Chat
         open={chatOpen}
         setOpen={setChatOpen}
-        messages={messages}
+        messages={visibleMessages}
         visitor={visitor}
         realtimeError={realtimeError}
         text={chatText}
