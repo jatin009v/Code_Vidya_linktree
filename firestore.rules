@@ -1,0 +1,64 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    match /resources/{resourceId} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn();
+    }
+
+    match /presence/{userId} {
+      allow read: if signedIn();
+      allow create, update, delete: if signedIn() && request.auth.uid == userId;
+    }
+
+    match /messages/{messageId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userId == request.auth.uid
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 240;
+      allow update: if false;
+      allow delete: if signedIn();
+    }
+
+    match /recent_opens/{docId} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.userName is string
+        && request.resource.data.resourceTitle is string
+        && request.resource.data.timestamp is number;
+      allow update, delete: if false;
+    }
+
+    match /visits/{visitId} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && request.resource.data.uid is string
+        && request.resource.data.date is string
+        && request.resource.data.timestamp is number;
+      allow delete: if false;
+    }
+
+    match /premiumAccess/{code} {
+      allow get: if signedIn() && resource.data.claimedBy == request.auth.uid;
+      allow update: if signedIn()
+        && resource.data.status == 'Active'
+        && (
+          // Case 1: Unclaimed code is being claimed by setting claimedBy to user's UID
+          ((!('claimedBy' in resource.data) || resource.data.claimedBy == null) && request.resource.data.claimedBy == request.auth.uid)
+          ||
+          // Case 2: Code already claimed by this user
+          (resource.data.claimedBy == request.auth.uid)
+        )
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['claimedBy', 'claimedAt']);
+      allow list: if false;
+      allow create, delete: if false;
+    }
+  }
+}
