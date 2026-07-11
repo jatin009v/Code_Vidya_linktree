@@ -1,14 +1,14 @@
 export type Category =
-  | "Programming"
-  | "AI"
-  | "Frontend"
-  | "Backend"
-  | "Cloud"
-  | "DevOps"
-  | "Cyber Security"
-  | "Books"
-  | "Courses"
-  | "Communities";
+  | "GitHub Student Resources"
+  | "Google Communities"
+  | "Microsoft Programs"
+  | "AI Communities"
+  | "Cloud Platforms"
+  | "Developer Programs"
+  | "Learning Platforms"
+  | "Certification Programs"
+  | "Startup Communities"
+  | "Hosting & Startup Tools";
 
 export type ThemeName = "Dark" | "Purple" | "Blue" | "Emerald";
 
