@@ -82,6 +82,7 @@ function App() {
   const [unlocking, setUnlocking] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const lastTypingRef = useRef(false);
+  const isFirstRender = useRef(true);
   const appRef = useRef<HTMLDivElement>(null);
   const cardsRef = useRef<HTMLDivElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
@@ -207,15 +208,6 @@ function App() {
       gsap.fromTo(".intro-mask", { yPercent: 0 }, { yPercent: -110, duration: 1.2, ease: "power4.inOut", delay: 0.2 });
       gsap.from(".hero-reveal", { y: 34, opacity: 0, duration: 1.05, stagger: 0.08, ease: "power3.out", delay: 0.55 });
       gsap.from(".panel-reveal", { y: 24, opacity: 0, duration: 0.9, stagger: 0.07, ease: "power2.out", delay: 0.75 });
-      gsap.from(".resource-card", {
-        y: 52,
-        opacity: 0,
-        rotateX: 8,
-        duration: 1,
-        stagger: 0.08,
-        ease: "power3.out",
-        delay: 0.95
-      });
       gsap.to(".float-layer", {
         y: -18,
         duration: 4.5,
@@ -243,7 +235,27 @@ function App() {
     }, appRef);
 
     return () => ctx.revert();
-  }, [category, query, resources, viewPremium, premiumResources]);
+  }, []);
+
+  useEffect(() => {
+    if (!appRef.current) return;
+
+    const ctx = gsap.context(() => {
+      gsap.from(".resource-card", {
+        y: 52,
+        opacity: 0,
+        rotateX: 8,
+        duration: 1,
+        stagger: 0.08,
+        ease: "power3.out",
+        delay: isFirstRender.current ? 0.95 : 0.15
+      });
+    }, appRef);
+
+    isFirstRender.current = false;
+
+    return () => ctx.revert();
+  }, [category, viewPremium, resources, premiumResources]);
 
   useEffect(() => {
     const move = (event: MouseEvent) => {
