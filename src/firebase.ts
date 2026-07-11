@@ -193,7 +193,7 @@ export async function validateAccessCode(code: string): Promise<Resource[]> {
         {
           id: "mock-1",
           title: "Mock Premium Course Link",
-          category: "Courses",
+          category: "Learning Platforms",
           description: "This is a mock premium resource for local testing. It is completely safe and non-sensitive.",
           url: "https://example.com/mock-premium-course",
           image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=900&q=80",
