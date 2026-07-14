@@ -11,7 +11,6 @@ import {
   collection,
   deleteDoc,
   doc,
-  getDoc,
   getDocs,
   getFirestore,
   increment,
@@ -178,95 +177,9 @@ export async function seedFirebaseResources() {
   await Promise.all(seedResources.map((resource) => setDoc(doc(db!, "resources", resource.id), resource, { merge: true })));
 }
 
-export async function validateAccessCode(code: string): Promise<Resource[]> {
-  const cleaned = code.trim().toUpperCase();
-  const uid = auth?.currentUser?.uid || localStorage.getItem("code-vidya-local-uid");
-  
-  if (!uid) {
-    throw new Error("No active session. Please wait or reload.");
-  }
-
-  if (!db) {
-    // In-memory fallback for local testing without Firebase
-    const mockAccessCodes: Record<string, Resource[]> = {
-      "TEST-CODE": [
-        {
-          id: "mock-1",
-          title: "Mock Premium Course Link",
-          category: "Learning Platforms",
-          description: "This is a mock premium resource for local testing. It is completely safe and non-sensitive.",
-          url: "https://example.com/mock-premium-course",
-          image: "https://images.unsplash.com/photo-1633356122544-f134324a6cee?auto=format&fit=crop&w=900&q=80",
-          accent: "#06b6d4",
-          bookmarks: 0
-        }
-      ]
-    };
-    if (mockAccessCodes[cleaned]) {
-      return mockAccessCodes[cleaned];
-    }
-    throw new Error("Invalid or expired access code.");
-  }
-
-  const docRef = doc(db, "premiumAccess", cleaned);
-
-  try {
-    // 1. Try to fetch the document directly (if already claimed by this user)
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      if (data.status !== "Active") {
-        throw new Error("This access code is no longer active.");
-      }
-      if (data.expiryDate) {
-        const expiry = new Date(data.expiryDate).getTime();
-        if (Date.now() > expiry) {
-          throw new Error("This access code has expired.");
-        }
-      }
-      return data.resources || [];
-    } else {
-      throw new Error("Invalid or expired access code.");
-    }
-  } catch (error: any) {
-    // 2. If it failed due to permission-denied, it might mean the code exists but hasn't been claimed yet.
-    // Let's attempt to claim it by setting claimedBy to our UID.
-    const isPermissionError = error?.code === "permission-denied" || 
-                              String(error).includes("permission-denied") ||
-                              String(error).includes("PERMISSION_DENIED");
-                              
-    if (isPermissionError) {
-      try {
-        // Try to update the claimedBy field to our UID
-        await updateDoc(docRef, {
-          claimedBy: uid,
-          claimedAt: new Date().toISOString()
-        });
-        
-        // If update succeeded, we now own it. Fetch the document again!
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          if (data.status !== "Active") {
-            throw new Error("This access code is no longer active.");
-          }
-          if (data.expiryDate) {
-            const expiry = new Date(data.expiryDate).getTime();
-            if (Date.now() > expiry) {
-              throw new Error("This access code has expired.");
-            }
-          }
-          return data.resources || [];
-        }
-      } catch (claimError: any) {
-        // If update fails, the document either doesn't exist, is inactive, or is already claimed by someone else
-        throw new Error("Invalid, expired, or already claimed access code.");
-      }
-    }
-    
-    // Rethrow any other validation errors
-    throw new Error(error?.message || "Invalid or expired access code.");
-  }
+export async function validateAccessCode(_code: string): Promise<Resource[]> {
+  // Premium code validation is disabled until real premium resources are available.
+  throw new Error("Premium access codes have not been released yet.");
 }
 
 export function subscribeResources(callback: Listener<Resource[]>, onError?: ErrorListener) {

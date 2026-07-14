@@ -69,15 +69,9 @@ function App() {
   const [recentOpens, setRecentOpens] = useState<RecentOpen[]>([]);
   const [toast, setToast] = useState<string | null>(null);
   const [viewPremium, setViewPremium] = useState(false);
-  const [premiumResources, setPremiumResources] = useState<Resource[]>(() => {
-    try {
-      const stored = sessionStorage.getItem("code-vidya-premium-resources");
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+  const [premiumResources, setPremiumResources] = useState<Resource[]>([]);
   const [showAccessModal, setShowAccessModal] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
   const [accessCodeInput, setAccessCodeInput] = useState("");
   const [unlocking, setUnlocking] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
@@ -181,7 +175,9 @@ function App() {
   }, [toast]);
 
   useEffect(() => {
-    if (showAccessModal) {
+    if (!showAccessModal) {
+      setShowComingSoon(false);
+    } else {
       setValidationError(null);
     }
   }, [showAccessModal]);
@@ -349,24 +345,7 @@ function App() {
   const handleUnlock = async (e: FormEvent) => {
     e.preventDefault();
     if (!accessCodeInput.trim()) return;
-    setUnlocking(true);
-    setValidationError(null);
-    try {
-      const res = await validateAccessCode(accessCodeInput);
-      if (res.length === 0) {
-        setValidationError("This access code doesn't contain any resources.");
-      } else {
-        setPremiumResources(res);
-        sessionStorage.setItem("code-vidya-premium-resources", JSON.stringify(res));
-        setViewPremium(true);
-        setShowAccessModal(false);
-        setAccessCodeInput("");
-      }
-    } catch (err: any) {
-      setValidationError(err?.message || "Invalid or expired access code.");
-    } finally {
-      setUnlocking(false);
-    }
+    setShowComingSoon(true);
   };
 
 
@@ -613,51 +592,89 @@ function App() {
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
               className="glass-panel w-full max-w-md p-6 text-center shadow-glow"
             >
-              <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-amber-500/30 bg-amber-500/10">
-                <Sparkles className="text-amber-400" size={24} />
-              </div>
-              <h3 className="text-xl font-semibold text-white">Unlock Premium Vault</h3>
-              <p className="mt-2 text-xs text-white/55">
-                Enter your unique access code to unlock your exclusive premium resources and vouchers.
-              </p>
-              
-              <form onSubmit={handleUnlock} className="mt-6">
-                <input
-                  type="text"
-                  required
-                  value={accessCodeInput}
-                  onChange={(e) => setAccessCodeInput(e.target.value)}
-                  placeholder="Enter Access Code (e.g. CODE-XXXX)"
-                  className="field text-center font-mono uppercase tracking-wider placeholder:normal-case placeholder:tracking-normal"
-                  disabled={unlocking}
-                />
-                
-                {validationError && (
-                  <p className="mt-3 text-xs text-rose-400">{validationError}</p>
-                )}
-                
-                <div className="mt-6 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowAccessModal(false);
-                      setAccessCodeInput("");
-                      setValidationError(null);
-                    }}
-                    className="magnetic-btn w-full"
-                    disabled={unlocking}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="magnetic-btn primary w-full"
-                    disabled={unlocking}
-                  >
-                    {unlocking ? "Validating..." : "Unlock"}
-                  </button>
-                </div>
-              </form>
+              {showComingSoon ? (
+                <>
+                  <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-amber-500/30 bg-amber-500/10">
+                    <Sparkles className="text-amber-400" size={24} />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">🚀 Premium Resources Coming Soon</h3>
+                  <div className="mt-4 text-xs text-white/55 space-y-3 text-center leading-relaxed">
+                    <p>
+                      Premium access codes have not been released yet.<br />
+                      We are currently collecting verified premium resources and exclusive partner benefits.
+                    </p>
+                    <p>
+                      Once they become available, you can unlock them using a valid Premium Access Code.
+                    </p>
+                    <p>
+                      Please check back soon.
+                    </p>
+                  </div>
+                  
+                  <div className="mt-6">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowAccessModal(false);
+                        setAccessCodeInput("");
+                        setValidationError(null);
+                        setShowComingSoon(false);
+                      }}
+                      className="magnetic-btn primary w-full"
+                    >
+                      Close
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-full border border-amber-500/30 bg-amber-500/10">
+                    <Sparkles className="text-amber-400" size={24} />
+                  </div>
+                  <h3 className="text-xl font-semibold text-white">Unlock Premium Vault</h3>
+                  <p className="mt-2 text-xs text-white/55">
+                    Enter your unique access code to unlock your exclusive premium resources and vouchers.
+                  </p>
+                  
+                  <form onSubmit={handleUnlock} className="mt-6">
+                    <input
+                      type="text"
+                      required
+                      value={accessCodeInput}
+                      onChange={(e) => setAccessCodeInput(e.target.value)}
+                      placeholder="Enter Access Code (e.g. CODE-XXXX)"
+                      className="field text-center font-mono uppercase tracking-wider placeholder:normal-case placeholder:tracking-normal"
+                      disabled={unlocking}
+                    />
+                    
+                    {validationError && (
+                      <p className="mt-3 text-xs text-rose-400">{validationError}</p>
+                    )}
+                    
+                    <div className="mt-6 flex gap-3">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowAccessModal(false);
+                          setAccessCodeInput("");
+                          setValidationError(null);
+                        }}
+                        className="magnetic-btn w-full"
+                        disabled={unlocking}
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="magnetic-btn primary w-full"
+                        disabled={unlocking}
+                      >
+                        {unlocking ? "Validating..." : "Unlock"}
+                      </button>
+                    </div>
+                  </form>
+                </>
+              )}
             </motion.div>
           </div>
         )}
